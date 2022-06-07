@@ -9,7 +9,7 @@ const corsOptions = {
     origin: process.env.ORIGIN
 }
 
-server.use(cors(corsOptions));
+server.use(cors());
 
 server.get('/api', (req, res) => {
     res.status(200).json({message: 'The api is up and running'})
