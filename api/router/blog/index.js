@@ -10,7 +10,7 @@ Router.get('/posts', (req, res) => {
           .status(400)
           .json({ errorMessage: 'Error retrieving blogs.' });
       }
-      res.header('Access-Control-Allow-Origin', process.env.ORIGIN);
+      res.setHeader('Access-Control-Allow-Origin', process.env.ORIGIN);
       res
         .status(200)
         .json({ message: 'Rendering Blog.', object: blog });
@@ -31,7 +31,7 @@ Router.get('/post/:name', (req, res) => {
   try {
     Blog.getPost(name)
       .then((post) => {
-        res.header('Access-Control-Allow-Origin', process.env.ORIGIN);
+        res.setHeader('Access-Control-Allow-Origin', process.env.ORIGIN);
         res
           .status(200)
           .json({ message: 'Rendering post.', post: post });
@@ -57,7 +57,7 @@ Router.post('/new-post', (req, res) => {
           .status(400)
           .json({ message: 'Error, could not publish new post.' });
       } else {
-        res.header('Access-Control-Allow-Origin', process.env.ORIGIN);
+        res.setHeader('Access-Control-Allow-Origin', process.env.ORIGIN);
         res.status(200).json({ message: 'New post published.' });
       }
     });
