@@ -6,7 +6,7 @@ const server = express();
 server.use(express.json());
 
 const corsOptions = {
-    origin: '*'
+    origin: process.env.ORIGIN
 }
 
 server.use(cors(corsOptions));
