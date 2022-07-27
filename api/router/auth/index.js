@@ -99,9 +99,9 @@ router.get('/', (req, res) => {
   const id = generateId();
   const token = generateToken(id);
 
+  console.log('Hitting the token from the popup');
+
   res.status(200).json({
-    message: 'Access Cookies',
-    session: req.session,
     token: token,
   });
 });
@@ -130,7 +130,7 @@ router.get('/verify', (req, res) => {
 router.put('/reset-password', (req, res) => {
   const { email, password } = req.body;
 
-  console.log('updating user...')
+  console.log('updating user...');
 
   User.findUserByEmail(email).then((user) => {
     if (!user) {
