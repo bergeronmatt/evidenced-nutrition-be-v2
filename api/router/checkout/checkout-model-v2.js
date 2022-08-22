@@ -1,5 +1,4 @@
 const stripe = require('stripe')(process.env.STRIPE_SK);
-const res = require('express/lib/response');
 const { uuid } = require('uuidv4');
 
 // Search Stripe for existing customers
@@ -47,22 +46,19 @@ async function createCustomer(customer, paymentMethod) {
       }
     );
 
-    await stripe.paymentMethods.update(
-      newPayment.data[0].id,
-      {
-        billing_details: {
-          name: name,
-          address: {
-            city: customer.address.addressCity,
-            line1: customer.address.addressLine1,
-            line2: customer.address.addressLine2,
-            postal_code: customer.address.addressPostal_code,
-            state: customer.address.addressState,
-          },
-          email: customer.info.customerInfoEmail,
+    await stripe.paymentMethods.update(newPayment.data[0].id, {
+      billing_details: {
+        name: name,
+        address: {
+          city: customer.address.addressCity,
+          line1: customer.address.addressLine1,
+          line2: customer.address.addressLine2,
+          postal_code: customer.address.addressPostal_code,
+          state: customer.address.addressState,
         },
-      }
-    );
+        email: customer.info.customerInfoEmail,
+      },
+    });
 
     return newCustomer;
   } catch (err) {
@@ -77,8 +73,7 @@ async function createIntent(amount, customer, paymentMethod) {
 
   // Get all payment methods associated with the customer
 
-  try{
-
+  try {
     const paymentList = await stripe.customers.listPaymentMethods(
       customer.id,
       {
@@ -93,43 +88,36 @@ async function createIntent(amount, customer, paymentMethod) {
     var submittedLast4 = paymentMethod.card.last4;
     var card_id;
 
-    for(var i = 0; i < paymentList.data.length; i++) {
-      if(paymentList.data[i].card.last4 === submittedLast4){
+    for (var i = 0; i < paymentList.data.length; i++) {
+      if (paymentList.data[i].card.last4 === submittedLast4) {
         card_id = paymentList.data[i].id;
       } else {
-        card_id = paymentMethod.id
+        card_id = paymentMethod.id;
 
-        const attached = await stripe.paymentMethods.attach(
-          card_id,
-          {customer: customer.id}
-        );
+        const attached = await stripe.paymentMethods.attach(card_id, {
+          customer: customer.id,
+        });
 
-        const updated =await stripe.paymentMethods.update(
-          card_id,
-          {
-            billing_details: {
-              name: customer.id,
-              address: {
-                city: customer.address.city,
-                line1: customer.address.line1,
-                line2: customer.address.line2,
-                postal_code: customer.address.postal_code,
-                state: customer.address.state,
-              },
-              email: customer.email,
+        const updated = await stripe.paymentMethods.update(card_id, {
+          billing_details: {
+            name: customer.id,
+            address: {
+              city: customer.address.city,
+              line1: customer.address.line1,
+              line2: customer.address.line2,
+              postal_code: customer.address.postal_code,
+              state: customer.address.state,
             },
-          }
-        );
-
+            email: customer.email,
+          },
+        });
       }
     }
-
-  }catch(err) {
+  } catch (err) {
     return;
   }
 
   try {
-
     const intent = await stripe.paymentIntents.create({
       payment_method_types: ['card'],
       customer: customer.id,
@@ -140,9 +128,7 @@ async function createIntent(amount, customer, paymentMethod) {
       confirm: true,
       payment_method: card_id,
       receipt_email: customer.email,
-      metadata: {
-        on_behalf_of: 'Evidenced Nutrition',
-      },
+      on_behalf_of: process.env.CONNECT_ID,
       transfer_group: TransferId,
     });
 
@@ -157,7 +143,7 @@ async function createIntent(amount, customer, paymentMethod) {
 async function createTransfer(intent) {
   let total = intent.amount;
 
-  let fee = Math.round(total * 0.05 + 60);
+  let fee = Math.round(total * 0.029 + 30);
 
   let amount = total - fee;
 
@@ -167,15 +153,20 @@ async function createTransfer(intent) {
     const transfer = await stripe.transfers.create({
       amount: amount,
       currency: 'usd',
-      destination: 'acct_1J0q6DGFndXMjubu',
+      destination: process.env.CONNECT_ID,
       transfer_group: intent.transfer_group,
       source_transaction: transactionSource,
     });
+
+    if (!transfer) {
+      console.log('Transfer failed: ', transfer);
+    }
     return transfer;
   } catch (err) {
     return;
   }
 }
+
 
 module.exports = {
   searchCustomers,
